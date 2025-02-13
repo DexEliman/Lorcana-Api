@@ -27,7 +27,7 @@ class ImportData extends Command
      */
     protected $description = 'Permet de récupérer gentillement les données d\'une autre API';
 
-    private $useCache = false;
+    private $useCache = false; // Set to true to use cached data
 
     /**
      * Execute the console command.
@@ -40,7 +40,12 @@ class ImportData extends Command
         if ($this->useCache) {
             $data = json_decode(file_get_contents(storage_path("app/data.json")));
         } else {
-            $request = Http::get($url);
+            try {
+                $request = Http::get($url);
+            } catch (\Exception $e) {
+                error("Failed to fetch data from the API: " . $e->getMessage());
+                return;
+            }
             $data = json_decode($request->body());
             //Save in file
             file_put_contents(storage_path("app/data.json"), json_encode($data));
@@ -49,7 +54,13 @@ class ImportData extends Command
         $sets = $data->sets;
         $cards = $data->cards;
 
+        if (empty($sets) || empty($cards)) {
+            error("No data found to sync.");
+            return;
+        }
+
         $this->syncSets($sets);
+        info("Data imported successfully.");
         $this->syncCards($cards);
 
         return;
@@ -60,12 +71,15 @@ class ImportData extends Command
         $cards = [];
         $setIdsByApiIds = Set::pluck("id", "api_id");
         foreach ($data as $key => $value) {
+            // Log the card data for debugging
+            info("Processing card data: " . json_encode($value));
+
             $cards[] = [
                 "api_id" => $value->id,
                 "set_id" => $setIdsByApiIds[$value->setCode],
                 "name" => $value->name,
                 "number" => $value->number,
-                "version" => $value->version ?? "",
+                "version" => $value->version ?? 'unknown', // Set a default value if version is not available
                 "cardIdentifier" => $value->fullIdentifier,
                 "description" => $value->fullText,
                 "image" =>  $value->images->full,

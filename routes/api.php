@@ -5,10 +5,18 @@ use App\Http\Controllers\Api\SetController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+Route::get("/register", [AuthController::class, "register"]);
 Route::post("/register", [AuthController::class, "register"]);
+Route::post("/login", [AuthController::class, "login"]);
 Route::post("/login", [AuthController::class, "login"]);
 Route::post("/logout", [AuthController::class, "logout"]);
 Route::get("/me", [AuthController::class, "me"]);
+
+Route::post("/import-data", function () {
+    Artisan::call('app:import-data');
+    return response()->json(['message' => 'Data import initiated.'], 200);
+    
+});
 
 Route::get("/me/cards", [UserCardController::class, "index"]);
 Route::post("/me/{id}/update-owned", [UserCardController::class, "updateOwned"]);

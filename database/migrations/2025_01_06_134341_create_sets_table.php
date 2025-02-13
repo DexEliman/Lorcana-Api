@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string("name");
             $table->string("code")->unique();
             $table->date("release_date")->nullable();
-            $table->date("prerelease_date");
+            $table->date("prerelease_date")->nullable();
             $table->timestamps();
         });
     }
