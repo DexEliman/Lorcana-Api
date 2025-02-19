@@ -6,10 +6,15 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class WishlistRequest extends FormRequest
 {
-    public function rules()
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
     {
         return [
-            'card_id' => 'required|exists:cards,id',
+            'card_id' => 'required|exists:cards,id'
         ];
     }
 }

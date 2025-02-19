@@ -12,46 +12,58 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller {
     // Inscription d'un nouvel utilisateur
-    public function register(Request $request) {
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:6'
-        ]);
+    public function register(RegisterRequest $request) {
+        $validated = $request->validated();
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password)
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password'])
         ]);
 
-        return response()->json(['token' => $user->createToken('API Token')->plainTextToken], 201);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User registered successfully',
+            'data' => [
+                'token' => $user->createToken('API Token')->plainTextToken
+            ]
+        ], 201);
     }
 
     // Connexion d'un utilisateur
-    public function login(Request $request) {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+    public function login(LoginRequest $request) {
+        $validated = $request->validated();
 
-        $remember_me = $request->has('remember_me') ? true : false;
-
-        if (Auth::attempt(['email' => $request->input('email'), 'password' => $request->input('password')], $remember_me)) {
-            return response()->json(['token' => Auth::user()->createToken('API Token')->plainTextToken]);
-        } else {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        if (!Auth::attempt($validated)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid credentials'
+            ], 401);
         }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User logged in successfully',
+            'data' => [
+                'token' => Auth::user()->createToken('API Token')->plainTextToken
+            ]
+        ]);
     }
 
     // Récupérer les informations de l'utilisateur connecté
     public function me(Request $request) {
-        return response()->json($request->user());
+        return response()->json([
+            'status' => 'success',
+            'data' => $request->user()
+        ]);
     }
 
     // Déconnexion de l'utilisateur
     public function logout(Request $request) {
         $request->user()->tokens()->delete();
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Logged out successfully'
+        ]);
     }
 }
